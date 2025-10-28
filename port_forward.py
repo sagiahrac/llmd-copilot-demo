@@ -3,6 +3,7 @@ import json
 import httpx
 from fastapi import FastAPI, Request, Response
 
+import clock
 import utils
 
 TARGET_URL = "http://localhost:8000"  # inference gateway
@@ -29,6 +30,9 @@ async def proxy_responses(request: Request):
 
 @app.api_route("/v1/chat/completions", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_chat_completions(request: Request):
+    clock.open_clock_app(delay=0)
+    clock.reset_stopwatch()
+    clock.stopwatch_start_stop()
     print(f"\n\033[1;33m--- Request: {request.method} /v1/chat/completions ---\033[0m")
 
     async with httpx.AsyncClient() as client:
@@ -45,6 +49,8 @@ async def proxy_chat_completions(request: Request):
             timeout=None,
         )
 
+        elapsed = resp.elapsed.total_seconds()  # total round-trip time
+        clock.stopwatch_start_stop()
         print(f"\n\033[1;33m--- Response: {resp.status_code} ---\033[0m")
 
         utils.print_response_chunks(resp)

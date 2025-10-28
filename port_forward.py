@@ -14,6 +14,7 @@ PYTHON_TK_PATH = "clock/.venv/bin/python3.14"
 STOPWATCH_APP_PATH = "clock/app.py"
 
 app = FastAPI()
+subprocess.Popen([PYTHON_TK_PATH, STOPWATCH_APP_PATH])
 
 @app.api_route("/v1/responses", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_responses(request: Request):
@@ -33,12 +34,10 @@ async def proxy_responses(request: Request):
 
 @app.api_route("/v1/chat/completions", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_chat_completions(request: Request):
-    subprocess.Popen([PYTHON_TK_PATH, STOPWATCH_APP_PATH])
-
-    
     print(f"\n\033[1;33m--- Request: {request.method} /v1/chat/completions ---\033[0m")
 
     async with httpx.AsyncClient() as client:
+        await client.get("http://127.0.0.1:9000/reset")
         await client.get("http://127.0.0.1:9000/start")
 
         body = await request.body()

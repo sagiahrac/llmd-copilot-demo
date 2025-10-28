@@ -9,7 +9,16 @@ class Stopwatch:
     def __init__(self, master):
         self.master = master
         master.title("Cache Metrics")
-        master.geometry("380x300")
+        
+        # Center the window on screen
+        window_width = 380
+        window_height = 300
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        center_x = int(screen_width/2 - window_width/2)
+        center_y = int(screen_height/2 - window_height/2)
+        master.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
+        
         master.configure(bg='white')
         master.resizable(False, False)
 

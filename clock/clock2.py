@@ -233,6 +233,15 @@ async def reset_metrics():
         return stopwatch_instance.update_metrics(hits=0, misses=0, admissions=0, evictions=0)
     return {"error": "Stopwatch not initialized"}
 
+@app.post("/quit")
+async def quit_app():
+    """Close the application"""
+    if stopwatch_instance:
+        # Schedule the GUI to close on the main thread
+        stopwatch_instance.master.after(100, stopwatch_instance.master.quit)
+        return {"status": "Application closing..."}
+    return {"error": "Stopwatch not initialized"}
+
 def run_api_server():
     """Run the FastAPI server in a separate thread"""
     uvicorn.run(app, host="127.0.0.1", port=9000, log_level="info")
@@ -259,5 +268,7 @@ if __name__ == "__main__":
     print("  POST /metrics/increment - Increment metrics by amounts")
     print("       ?hits=1&misses=0&admissions=1&evictions=0")
     print("  POST /metrics/reset - Reset all metrics to zero")
+    print("\nApp control:")
+    print("  POST /quit - Close the application")
     
     root.mainloop()

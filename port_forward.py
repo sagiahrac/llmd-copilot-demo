@@ -1,14 +1,17 @@
 import json
+import subprocess
 
 import httpx
 from fastapi import FastAPI, Request, Response
 
-import clock
 import utils
 
 TARGET_URL = "http://localhost:8000"  # inference gateway
 LISTEN_PORT = 8001
 TARGET_PORT = 8000
+
+PYTHON_TK_PATH = "clock/.venv/bin/python3.14"
+STOPWATCH_APP_PATH = "clock/app.py"
 
 app = FastAPI()
 
@@ -30,12 +33,14 @@ async def proxy_responses(request: Request):
 
 @app.api_route("/v1/chat/completions", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_chat_completions(request: Request):
-    clock.open_clock_app(delay=0)
-    clock.reset_stopwatch()
-    clock.stopwatch_start_stop()
+    subprocess.Popen([PYTHON_TK_PATH, STOPWATCH_APP_PATH])
+
+    
     print(f"\n\033[1;33m--- Request: {request.method} /v1/chat/completions ---\033[0m")
 
     async with httpx.AsyncClient() as client:
+        await client.get("http://127.0.0.1:9000/start")
+
         body = await request.body()
 
         utils.log_request(request, body)
@@ -49,8 +54,10 @@ async def proxy_chat_completions(request: Request):
             timeout=None,
         )
 
+        await client.get("http://127.0.0.1:9000/stop")
+
         elapsed = resp.elapsed.total_seconds()  # total round-trip time
-        clock.stopwatch_start_stop()
+        
         print(f"\n\033[1;33m--- Response: {resp.status_code} ---\033[0m")
 
         utils.print_response_chunks(resp)

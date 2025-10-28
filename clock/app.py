@@ -109,11 +109,21 @@ class Stopwatch:
         centisecs = int((seconds - int(seconds)) * 100)
         return f"{mins:02}:{secs:02}.{centisecs:02}"
 
+    def bring_to_front(self):
+        """Bring the window to front"""
+        self.master.after(10, lambda: (
+            self.master.lift(),
+            self.master.attributes('-topmost', True),
+            self.master.attributes('-topmost', False),
+            self.master.focus_force()
+        ))
+
     def start(self):
         with self._lock:
             if not self.running:
                 self.running = True
                 self.start_time = time.time() - self.time
+                self.bring_to_front()
                 return {"status": "started", "time": self.time}
             return {"status": "already_running", "time": self.time}
 
@@ -122,6 +132,7 @@ class Stopwatch:
             if self.running:
                 self.running = False
                 self.time = time.time() - self.start_time if self.start_time else 0
+                self.bring_to_front()
                 return {"status": "stopped", "time": self.time}
             return {"status": "already_stopped", "time": self.time}
 
@@ -131,6 +142,7 @@ class Stopwatch:
             self.time = 0
             self.start_time = None
             self.label.config(text="00:00.00")
+            self.bring_to_front()
             return {"status": "reset", "time": 0}
     
     def get_status(self):
@@ -185,31 +197,31 @@ async def get_status():
         return stopwatch_instance.get_status()
     return {"error": "Stopwatch not initialized"}
 
-@app.post("/start")
+@app.get("/start")
 async def start_stopwatch():
     if stopwatch_instance:
         return stopwatch_instance.start()
     return {"error": "Stopwatch not initialized"}
 
-@app.post("/stop")
+@app.get("/stop")
 async def stop_stopwatch():
     if stopwatch_instance:
         return stopwatch_instance.stop()
     return {"error": "Stopwatch not initialized"}
 
-@app.post("/reset")
+@app.get("/reset")
 async def reset_stopwatch():
     if stopwatch_instance:
         return stopwatch_instance.reset()
     return {"error": "Stopwatch not initialized"}
 
-@app.post("/metrics")
+@app.get("/metrics")
 async def update_metrics(hits: int = None, misses: int = None, admissions: int = None, evictions: int = None):
     if stopwatch_instance:
         return stopwatch_instance.update_metrics(hits, misses, admissions, evictions)
     return {"error": "Stopwatch not initialized"}
 
-@app.post("/metrics/increment")
+@app.get("/metrics/increment")
 async def increment_metrics(hits: int = 0, misses: int = 0, admissions: int = 0, evictions: int = 0):
     """Increment metrics by the specified amounts"""
     if stopwatch_instance:
@@ -226,20 +238,34 @@ async def increment_metrics(hits: int = 0, misses: int = 0, admissions: int = 0,
             }
     return {"error": "Stopwatch not initialized"}
 
-@app.post("/metrics/reset")
+@app.get("/metrics/reset")
 async def reset_metrics():
     """Reset all metrics to zero"""
     if stopwatch_instance:
         return stopwatch_instance.update_metrics(hits=0, misses=0, admissions=0, evictions=0)
     return {"error": "Stopwatch not initialized"}
 
-@app.post("/quit")
+@app.get("/quit")
 async def quit_app():
     """Close the application"""
     if stopwatch_instance:
         # Schedule the GUI to close on the main thread
         stopwatch_instance.master.after(100, stopwatch_instance.master.quit)
         return {"status": "Application closing..."}
+    return {"error": "Stopwatch not initialized"}
+
+@app.get("/focus")
+async def focus_window():
+    """Bring the GUI window to front/focus"""
+    if stopwatch_instance:
+        # Schedule the GUI focus on the main thread
+        stopwatch_instance.master.after(10, lambda: (
+            stopwatch_instance.master.lift(),
+            stopwatch_instance.master.attributes('-topmost', True),
+            stopwatch_instance.master.attributes('-topmost', False),
+            stopwatch_instance.master.focus_force()
+        ))
+        return {"status": "Window brought to front"}
     return {"error": "Stopwatch not initialized"}
 
 def run_api_server():
@@ -259,16 +285,17 @@ if __name__ == "__main__":
     print("API server running on http://127.0.0.1:9000")
     print("\nTimer endpoints:")
     print("  GET  /status - Get current status and metrics")
-    print("  POST /start  - Start the stopwatch")
-    print("  POST /stop   - Stop the stopwatch") 
-    print("  POST /reset  - Reset the stopwatch")
+    print("  GET  /start  - Start the stopwatch")
+    print("  GET  /stop   - Stop the stopwatch") 
+    print("  GET  /reset  - Reset the stopwatch")
     print("\nMetrics endpoints:")
-    print("  POST /metrics - Set absolute metric values")
+    print("  GET  /metrics - Set absolute metric values")
     print("       ?hits=100&misses=25&admissions=80&evictions=15")
-    print("  POST /metrics/increment - Increment metrics by amounts")
+    print("  GET  /metrics/increment - Increment metrics by amounts")
     print("       ?hits=1&misses=0&admissions=1&evictions=0")
-    print("  POST /metrics/reset - Reset all metrics to zero")
+    print("  GET  /metrics/reset - Reset all metrics to zero")
     print("\nApp control:")
-    print("  POST /quit - Close the application")
+    print("  GET  /focus - Bring window to front")
+    print("  GET  /quit - Close the application")
     
     root.mainloop()

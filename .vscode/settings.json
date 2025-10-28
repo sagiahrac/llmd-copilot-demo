@@ -1,0 +1,26 @@
+{
+    "github.copilot.chat.customOAIModels": {
+        "RedHatAI/Qwen3-32B-NVFP4": {
+            "name": "pytorch-conference-demo",
+            "url": "http://localhost:8001/v1",
+            "toolCalling": false,
+            "vision": false,
+            "thinking": true,
+            "maxInputTokens": 128000,
+            "maxOutputTokens": 4096,
+            "requiresAPIKey": false
+        },
+        "Qwen/Qwen3-32B": {
+            "name": "pytorch-conference-precise",
+            "url": "http://localhost:8001/v1",
+            "toolCalling": false,
+            "vision": false,
+            "thinking": true,
+            "maxInputTokens": 128000,
+            "maxOutputTokens": 4096,
+            "requiresAPIKey": false
+        }
+    },
+    "github.copilot.chat.useResponsesApi": false,
+    "python-envs.pythonProjects": [],
+}

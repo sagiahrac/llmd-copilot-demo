@@ -1,0 +1,33 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  default:
+    cmds:
+      - echo "namespace - {{.NAMESPACE}}"
+    silent: true
+
+  port-forward-inference-gateway:
+    preconditions:
+      - sh: '[ ! -z "{{.NAMESPACE}}" ]'
+        msg: 'NAMESPACE is required.'
+    vars:
+      LOCAL_PORT: '{{.LOCAL_PORT | default "8000"}}'
+      SERVICE_NAME:
+        sh: kubectl get svc -n {{.NAMESPACE}} -o custom-columns=":metadata.name" | grep "^infra-.*-inference-gateway-istio$"
+    cmds:
+      - kubectl port-forward -n {{.NAMESPACE}} service/{{.SERVICE_NAME}} {{.LOCAL_PORT}}:80
+  
+  run-inference-proxy:
+    cmds:
+      - uv run port_forward.py
+
+  launch-llmd-for-copilot:
+    deps:
+      - port-forward-inference-gateway
+      - run-inference-proxy
+    cmds:
+      - echo "Shutting down llmd port forward..."

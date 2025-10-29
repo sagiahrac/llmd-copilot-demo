@@ -10,8 +10,8 @@ TARGET_URL = "http://localhost:8000"  # inference gateway
 LISTEN_PORT = 8001
 TARGET_PORT = 8000
 
-PYTHON_TK_PATH = "clock/.venv/bin/python3.14"
-STOPWATCH_APP_PATH = "clock/app.py"
+PYTHON_TK_PATH = "proxy/clock/.venv/bin/python3.14"
+STOPWATCH_APP_PATH = "proxy/clock/app.py"
 
 app = FastAPI()
 subprocess.Popen([PYTHON_TK_PATH, STOPWATCH_APP_PATH])

@@ -1,10 +1,14 @@
 import json
 import subprocess
+import asyncio
+import os
+from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, Request, Response
 
 import proxy.utils as utils
+import proxy.metrics as metrics
 
 TARGET_URL = "http://localhost:8000"  # inference gateway
 LISTEN_PORT = 8001
@@ -13,8 +17,75 @@ TARGET_PORT = 8000
 PYTHON_TK_PATH = "proxy/clock/.venv/bin/python3.14"
 STOPWATCH_APP_PATH = "proxy/clock/app.py"
 
-app = FastAPI()
-subprocess.Popen([PYTHON_TK_PATH, STOPWATCH_APP_PATH])
+# Background task for updating metrics
+async def update_metrics_periodically():
+    """Update metrics every 5 seconds from collector logs"""
+    while True:
+        try:
+            await asyncio.sleep(5)
+            
+            # Get the latest metrics from collector
+            namespace = os.environ.get('NAMESPACE', 'sage')
+            print(f"Fetching metrics from namespace: {namespace}")
+            
+            collector_metrics = metrics.get_collector_metrics(namespace, tail_lines=10)
+            print(f"Found {len(collector_metrics) if collector_metrics else 0} collector metrics")
+            
+            if collector_metrics:
+                # Get the most recent metrics entry
+                latest_metrics = collector_metrics[-1]
+                print(f"Latest metrics: {latest_metrics}")
+                
+                # Extract relevant metrics using correct field names from collector output
+                lookups = latest_metrics.get('lookups') 
+                admissions = latest_metrics.get('admissions')
+                evictions = latest_metrics.get('evictions')
+
+                print(f"Extracted values - lookups: {lookups}, admissions: {admissions}, evictions: {evictions}")
+
+                if any(v is None for v in [lookups, admissions, evictions]):
+                    print("Some metrics are missing, skipping update")
+                    continue  # Skip if any metric is missing
+                
+                # Update the GUI via API
+                try:
+                    async with httpx.AsyncClient(timeout=5.0) as client:
+                        response = await client.get(
+                            "http://127.0.0.1:9000/metrics",
+                            params={
+                                "misses": lookups,
+                                "admissions": admissions,
+                                "evictions": evictions
+                            }
+                        )
+                        print(f"GUI update response: {response.status_code} - {response.text}")
+                except Exception as api_error:
+                    print(f"Error updating GUI metrics: {api_error}")
+            else:
+                print("No collector metrics found")
+                    
+        except Exception as e:
+            print(f"Error updating metrics: {e}")
+            import traceback
+            traceback.print_exc()
+            # Continue running even if there's an error
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start the GUI application and metrics update task
+    subprocess.Popen([PYTHON_TK_PATH, STOPWATCH_APP_PATH])
+    task = asyncio.create_task(update_metrics_periodically())
+    
+    yield
+    
+    # Shutdown: Cancel the background task
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+
+app = FastAPI(lifespan=lifespan)
 
 @app.api_route("/v1/responses", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_responses(request: Request):
@@ -47,7 +118,7 @@ async def proxy_chat_completions(request: Request):
         
         resp = await client.request(
             request.method,
-            f"{app.state.target_url}/v1/chat/completions",
+            f"{TARGET_URL}/v1/chat/completions",
             content=body,
             headers=dict(request.headers),
             timeout=None,

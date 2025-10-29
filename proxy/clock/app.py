@@ -10,16 +10,16 @@ class Stopwatch:
         self.master = master
         master.title("Cache Metrics")
         
-        # Center the window on screen
-        window_width = 380
-        window_height = 300
+        # Center the window on screen - optimized dimensions
+        window_width = 520
+        window_height = 240
         screen_width = master.winfo_screenwidth()
         screen_height = master.winfo_screenheight()
         center_x = int(screen_width/2 - window_width/2)
         center_y = int(screen_height/2 - window_height/2)
         master.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
         
-        master.configure(bg='white')
+        master.configure(bg='#f8f9fa')
         master.resizable(False, False)
 
         self.time = 0  # elapsed time in seconds
@@ -28,65 +28,74 @@ class Stopwatch:
         self._lock = threading.Lock()  # Thread safety for API access
         
         # Initialize metrics
-        self.hits = 0
         self.misses = 0
         self.admissions = 0
         self.evictions = 0
 
-        # Time display
-        self.label = tk.Label(master, text="00:00.00", 
-                             font=("Menlo", 36, "normal"), 
-                             fg='#2c2c2c', bg='white')
-        self.label.pack(pady=30)
+        # Main container with subtle background
+        main_frame = tk.Frame(master, bg='#ffffff', relief='flat', bd=0)
+        main_frame.pack(fill='both', expand=True, padx=16, pady=16)
 
-        # Metrics grid
-        metrics_frame = tk.Frame(master, bg='white')
-        metrics_frame.pack(pady=15)
+        # Time display with refined typography
+        self.label = tk.Label(main_frame, text="00:00.00", 
+                             font=("SF Pro Display", 28, "normal"), 
+                             fg='#1d1d1f', bg='#ffffff')
+        self.label.pack(pady=(20, 30))
 
-        # Metrics style - cleaner typography
-        metric_style = {
-            'font': ("Helvetica", 11),
-            'fg': '#8E8E93',
-            'bg': 'white'
+        # Metrics container with subtle separator
+        metrics_container = tk.Frame(main_frame, bg='#ffffff')
+        metrics_container.pack(fill='x', padx=20)
+
+        # Subtle top border for metrics section
+        separator = tk.Frame(metrics_container, height=1, bg='#e5e5e7')
+        separator.pack(fill='x', pady=(0, 20))
+
+        # Metrics grid with improved spacing
+        grid_frame = tk.Frame(metrics_container, bg='#ffffff')
+        grid_frame.pack(fill='x')
+
+        # Configure equal column distribution
+        for i in range(3):
+            grid_frame.grid_columnconfigure(i, weight=1, uniform="metric_col")
+
+        # Refined typography styles
+        label_style = {
+            'font': ("SF Pro Text", 11, "normal"),
+            'fg': '#86868b',
+            'bg': '#ffffff'
         }
         
         value_style = {
-            'font': ("Menlo", 18, "normal"),
-            'fg': '#1D1D1F',
-            'bg': 'white'
+            'font': ("SF Pro Display", 26, "normal"),
+            'fg': '#1d1d1f',
+            'bg': '#ffffff'
         }
 
-        # Create 2x2 grid
-        grid_frame = tk.Frame(metrics_frame, bg='white')
-        grid_frame.pack()
+        # Lookups metric
+        lookups_frame = tk.Frame(grid_frame, bg='#ffffff')
+        lookups_frame.grid(row=0, column=0, sticky='ew', padx=8)
+        
+        tk.Label(lookups_frame, text="LOOKUPS", **label_style).pack(anchor='center')
+        self.misses_label = tk.Label(lookups_frame, text="0", **value_style)
+        self.misses_label.pack(anchor='center', pady=(4, 0))
 
-        # Row 1
-        hits_frame = tk.Frame(grid_frame, bg='white')
-        hits_frame.grid(row=0, column=0, padx=15, pady=8)
-        tk.Label(hits_frame, text="HITS", **metric_style).pack()
-        self.hits_label = tk.Label(hits_frame, text="0", **value_style)
-        self.hits_label.pack()
-
-        misses_frame = tk.Frame(grid_frame, bg='white')
-        misses_frame.grid(row=0, column=1, padx=15, pady=8)
-        tk.Label(misses_frame, text="MISSES", **metric_style).pack()
-        self.misses_label = tk.Label(misses_frame, text="0", **value_style)
-        self.misses_label.pack()
-
-        # Row 2
-        admissions_frame = tk.Frame(grid_frame, bg='white')
-        admissions_frame.grid(row=1, column=0, padx=15, pady=12)
-        tk.Label(admissions_frame, text="ADMISSIONS", **metric_style).pack()
+        # Admissions metric
+        admissions_frame = tk.Frame(grid_frame, bg='#ffffff')
+        admissions_frame.grid(row=0, column=1, sticky='ew', padx=8)
+        
+        tk.Label(admissions_frame, text="ADMISSIONS", **label_style).pack(anchor='center')
         self.admissions_label = tk.Label(admissions_frame, text="0", **value_style)
-        self.admissions_label.pack()
+        self.admissions_label.pack(anchor='center', pady=(4, 0))
 
-        evictions_frame = tk.Frame(grid_frame, bg='white')
-        evictions_frame.grid(row=1, column=1, padx=15, pady=12)
-        tk.Label(evictions_frame, text="EVICTIONS", **metric_style).pack()
+        # Evictions metric
+        evictions_frame = tk.Frame(grid_frame, bg='#ffffff')
+        evictions_frame.grid(row=0, column=2, sticky='ew', padx=8)
+        
+        tk.Label(evictions_frame, text="EVICTIONS", **label_style).pack(anchor='center')
         self.evictions_label = tk.Label(evictions_frame, text="0", **value_style)
-        self.evictions_label.pack()
+        self.evictions_label.pack(anchor='center', pady=(4, 0))
 
-        # Update the label periodically
+        # Update the display periodically
         self.update_clock()
 
     def update_clock(self):
@@ -95,8 +104,7 @@ class Stopwatch:
                 self.time = time.time() - self.start_time
             self.label.config(text=self.format_time(self.time))
             
-            # Update metrics display
-            self.hits_label.config(text=f"{self.hits:,}")
+            # Update metrics display (remove hits)
             self.misses_label.config(text=f"{self.misses:,}")
             self.admissions_label.config(text=f"{self.admissions:,}")
             self.evictions_label.config(text=f"{self.evictions:,}")
@@ -155,7 +163,6 @@ class Stopwatch:
                 "time": current_time,
                 "formatted_time": self.format_time(current_time),
                 "metrics": {
-                    "hits": self.hits,
                     "misses": self.misses,
                     "admissions": self.admissions,
                     "evictions": self.evictions
@@ -165,8 +172,6 @@ class Stopwatch:
     def update_metrics(self, hits=None, misses=None, admissions=None, evictions=None):
         """Update cache metrics"""
         with self._lock:
-            if hits is not None:
-                self.hits = hits
             if misses is not None:
                 self.misses = misses
             if admissions is not None:
@@ -174,7 +179,6 @@ class Stopwatch:
             if evictions is not None:
                 self.evictions = evictions
             return {
-                "hits": self.hits,
                 "misses": self.misses,
                 "admissions": self.admissions,
                 "evictions": self.evictions
@@ -221,28 +225,11 @@ async def update_metrics(hits: int = None, misses: int = None, admissions: int =
         return stopwatch_instance.update_metrics(hits, misses, admissions, evictions)
     return {"error": "Stopwatch not initialized"}
 
-@app.get("/metrics/increment")
-async def increment_metrics(hits: int = 0, misses: int = 0, admissions: int = 0, evictions: int = 0):
-    """Increment metrics by the specified amounts"""
-    if stopwatch_instance:
-        with stopwatch_instance._lock:
-            stopwatch_instance.hits += hits
-            stopwatch_instance.misses += misses
-            stopwatch_instance.admissions += admissions
-            stopwatch_instance.evictions += evictions
-            return {
-                "hits": stopwatch_instance.hits,
-                "misses": stopwatch_instance.misses,
-                "admissions": stopwatch_instance.admissions,
-                "evictions": stopwatch_instance.evictions
-            }
-    return {"error": "Stopwatch not initialized"}
-
 @app.get("/metrics/reset")
 async def reset_metrics():
     """Reset all metrics to zero"""
     if stopwatch_instance:
-        return stopwatch_instance.update_metrics(hits=0, misses=0, admissions=0, evictions=0)
+        return stopwatch_instance.update_metrics(misses=0, admissions=0, evictions=0)
     return {"error": "Stopwatch not initialized"}
 
 @app.get("/quit")
@@ -290,9 +277,7 @@ if __name__ == "__main__":
     print("  GET  /reset  - Reset the stopwatch")
     print("\nMetrics endpoints:")
     print("  GET  /metrics - Set absolute metric values")
-    print("       ?hits=100&misses=25&admissions=80&evictions=15")
-    print("  GET  /metrics/increment - Increment metrics by amounts")
-    print("       ?hits=1&misses=0&admissions=1&evictions=0")
+    print("       ?misses=25&admissions=80&evictions=15")
     print("  GET  /metrics/reset - Reset all metrics to zero")
     print("\nApp control:")
     print("  GET  /focus - Bring window to front")

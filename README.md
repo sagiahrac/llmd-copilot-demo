@@ -67,7 +67,7 @@ Authenticate to the fusionv6 OpenShift cluster (specific instructions should be 
 ## Configuration
 
 The project is configured to use custom AI models through GitHub Copilot:
-- `pytorch-conference-demo` (RedHatAI/Qwen3-32B-NVFP4)
+- `sage` (ibm-granite/granite-3.1-8b-instruct)
 
 Both models are configured to use the local proxy at `http://localhost:8001/v1`.
 

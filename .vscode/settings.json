@@ -1,5 +1,15 @@
 {
     "github.copilot.chat.customOAIModels": {
+        "ibm-granite/granite-3.1-8b-instruct": {
+            "name": "sage",
+            "url": "http://localhost:8001/v1",
+            "toolCalling": false,
+            "vision": false,
+            "thinking": true,
+            "maxInputTokens": 128000,
+            "maxOutputTokens": 4096,
+            "requiresAPIKey": false
+        },
         "RedHatAI/Qwen3-32B-NVFP4": {
             "name": "pytorch-conference-demo",
             "url": "http://localhost:8001/v1",

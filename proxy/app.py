@@ -4,7 +4,7 @@ import subprocess
 import httpx
 from fastapi import FastAPI, Request, Response
 
-import utils
+import proxy.utils as utils
 
 TARGET_URL = "http://localhost:8000"  # inference gateway
 LISTEN_PORT = 8001

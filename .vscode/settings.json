@@ -3,7 +3,7 @@
         "ibm-granite/granite-3.1-8b-instruct": {
             "name": "sage",
             "url": "http://localhost:8001/v1",
-            "toolCalling": false,
+            "toolCalling": true,
             "vision": false,
             "thinking": true,
             "maxInputTokens": 128000,
@@ -32,5 +32,4 @@
         }
     },
     "github.copilot.chat.useResponsesApi": false,
-    "python-envs.pythonProjects": [],
 }

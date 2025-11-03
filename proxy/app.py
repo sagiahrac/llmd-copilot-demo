@@ -14,7 +14,7 @@ TARGET_URL = "http://localhost:8000"  # inference gateway
 LISTEN_PORT = 8001
 TARGET_PORT = 8000
 
-PYTHON_TK_PATH = "proxy/clock/.venv/bin/python3.14"
+# PYTHON_TK_PATH = "proxy/clock/.venv/bin/python3.14"
 STOPWATCH_APP_PATH = "proxy/clock/app.py"
 
 # Background task for updating metrics
@@ -53,7 +53,7 @@ async def update_metrics_periodically():
                         response = await client.get(
                             "http://127.0.0.1:9000/metrics",
                             params={
-                                "misses": lookups,
+                                "lookups": lookups,
                                 "admissions": admissions,
                                 "evictions": evictions
                             }
@@ -73,7 +73,7 @@ async def update_metrics_periodically():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start the GUI application and metrics update task
-    subprocess.Popen([PYTHON_TK_PATH, STOPWATCH_APP_PATH])
+    subprocess.Popen(["python", STOPWATCH_APP_PATH])
     task = asyncio.create_task(update_metrics_periodically())
     
     yield

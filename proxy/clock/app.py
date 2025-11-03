@@ -28,7 +28,7 @@ class Stopwatch:
         self._lock = threading.Lock()  # Thread safety for API access
         
         # Initialize metrics
-        self.misses = 0
+        self.lookups = 0
         self.admissions = 0
         self.evictions = 0
 
@@ -76,8 +76,8 @@ class Stopwatch:
         lookups_frame.grid(row=0, column=0, sticky='ew', padx=8)
         
         tk.Label(lookups_frame, text="LOOKUPS", **label_style).pack(anchor='center')
-        self.misses_label = tk.Label(lookups_frame, text="0", **value_style)
-        self.misses_label.pack(anchor='center', pady=(4, 0))
+        self.lookups_label = tk.Label(lookups_frame, text="0", **value_style)
+        self.lookups_label.pack(anchor='center', pady=(4, 0))
 
         # Admissions metric
         admissions_frame = tk.Frame(grid_frame, bg='#ffffff')
@@ -105,7 +105,7 @@ class Stopwatch:
             self.label.config(text=self.format_time(self.time))
             
             # Update metrics display (remove hits)
-            self.misses_label.config(text=f"{self.misses:,}")
+            self.lookups_label.config(text=f"{self.lookups:,}")
             self.admissions_label.config(text=f"{self.admissions:,}")
             self.evictions_label.config(text=f"{self.evictions:,}")
             
@@ -163,23 +163,23 @@ class Stopwatch:
                 "time": current_time,
                 "formatted_time": self.format_time(current_time),
                 "metrics": {
-                    "misses": self.misses,
+                    "lookups": self.lookups,
                     "admissions": self.admissions,
                     "evictions": self.evictions
                 }
             }
     
-    def update_metrics(self, hits=None, misses=None, admissions=None, evictions=None):
+    def update_metrics(self, hits=None, lookups=None, admissions=None, evictions=None):
         """Update cache metrics"""
         with self._lock:
-            if misses is not None:
-                self.misses = misses
+            if lookups is not None:
+                self.lookups = lookups
             if admissions is not None:
                 self.admissions = admissions
             if evictions is not None:
                 self.evictions = evictions
             return {
-                "misses": self.misses,
+                "lookups": self.lookups,
                 "admissions": self.admissions,
                 "evictions": self.evictions
             }
@@ -220,16 +220,16 @@ async def reset_stopwatch():
     return {"error": "Stopwatch not initialized"}
 
 @app.get("/metrics")
-async def update_metrics(hits: int = None, misses: int = None, admissions: int = None, evictions: int = None):
+async def update_metrics(hits: int = None, lookups: int = None, admissions: int = None, evictions: int = None):
     if stopwatch_instance:
-        return stopwatch_instance.update_metrics(hits, misses, admissions, evictions)
+        return stopwatch_instance.update_metrics(hits, lookups, admissions, evictions)
     return {"error": "Stopwatch not initialized"}
 
 @app.get("/metrics/reset")
 async def reset_metrics():
     """Reset all metrics to zero"""
     if stopwatch_instance:
-        return stopwatch_instance.update_metrics(misses=0, admissions=0, evictions=0)
+        return stopwatch_instance.update_metrics(lookups=0, admissions=0, evictions=0)
     return {"error": "Stopwatch not initialized"}
 
 @app.get("/quit")
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     print("  GET  /reset  - Reset the stopwatch")
     print("\nMetrics endpoints:")
     print("  GET  /metrics - Set absolute metric values")
-    print("       ?misses=25&admissions=80&evictions=15")
+    print("       ?lookups=25&admissions=80&evictions=15")
     print("  GET  /metrics/reset - Reset all metrics to zero")
     print("\nApp control:")
     print("  GET  /focus - Bring window to front")
